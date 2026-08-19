@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Grayscale Dark Graphite Emblem Circle -->
+    <path
+        android:pathData="M54,6 A48,48 0 1,0 54,102 A48,48 0 1,0 54,6 Z"
+        android:fillColor="#22262E"/>
+    <!-- Crisp White Chat Bubble -->
+    <path
+        android:pathData="M30,34 Q30,26 38,26 L70,26 Q78,26 78,34 L78,60 Q78,68 70,68 L54,68 L40,80 L40,68 L38,68 Q30,68 30,60 Z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Deep Charcoal Chat Dots -->
+    <path
+        android:pathData="M44,48 A4,4 0 1,1 44,47.99 Z"
+        android:fillColor="#0E1116"/>
+    <path
+        android:pathData="M54,48 A4,4 0 1,1 54,47.99 Z"
+        android:fillColor="#0E1116"/>
+    <path
+        android:pathData="M64,48 A4,4 0 1,1 64,47.99 Z"
+        android:fillColor="#0E1116"/>
+</vector>

@@ -1,0 +1,10 @@
+# Local SDK and Cache
+android-sdk/
+.gradle_user_home/
+.gradle/
+.kotlin/
+build/
+app/build/
+build.log
+build_utf8.log
+Loger/
