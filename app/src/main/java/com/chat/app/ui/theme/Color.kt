@@ -2,51 +2,30 @@ package com.chat.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ── Grayscale Monochrome Palette (Nothing OS / Graphite Dark Aesthetic) ─────────────
-val GrayscaleDarkBg        = Color(0xFF0E1116) // Deep charcoal backdrop
-val GrayscaleDarkSurface   = Color(0xFF16191F) // Elevation 1 (Top bars, headers)
-val GrayscaleDarkContainer = Color(0xFF22262E) // Squircle containers / input bars
-val GrayscaleDarkCard      = Color(0xFF2C303A) // Cards, squircle tiles & buttons
+// Core Palette - Dark / Obsidian Theme
+val ObsidianDark = Color(0xFF0F172A)
+val ObsidianSurface = Color(0xFF1E293B)
+val ObsidianCard = Color(0xFF334155)
+val ObsidianBorder = Color(0xFF475569)
 
-val GrayscaleTextPrimary   = Color(0xFFFFFFFF) // Crisp white
-val GrayscaleTextMuted     = Color(0xFF9CA3AF) // Sophisticated silver/gray
-val GrayscaleDivider       = Color(0xFF2C303A) // Subtle clean divider
+val PrimaryBlue = Color(0xFF3B82F6)
+val PrimaryBlueDark = Color(0xFF1D4ED8)
+val PrimaryBlueLight = Color(0xFF60A5FA)
 
-val GrayscaleAccent        = Color(0xFFFFFFFF) // High-contrast pure white
-val GrayscaleAccentDark    = Color(0xFF3F4450) // Graphite accent
+val AccentEmerald = Color(0xFF10B981)
+val AccentAmber = Color(0xFFF59E0B)
+val AccentRose = Color(0xFFF43F5E)
 
-val GrayscalePositive      = Color(0xFFE2E8F0) // Clean silver online indicator
-val GrayscaleDanger        = Color(0xFFEF4444) // Danger red for deletes / block
-val GrayscaleWarning       = Color(0xFFF59E0B) // Warning amber
+val TextPrimaryDark = Color(0xFFF8FAFC)
+val TextSecondaryDark = Color(0xFF94A3B8)
+val TextMutedDark = Color(0xFF64748B)
 
-// ── Chat Bubble Colors ───────────────────────────────────────────────────────────
-val BubbleSent             = Color(0xFF383C46) // Graphite sent bubble
-val BubbleRecv             = Color(0xFF20232A) // Deep charcoal received bubble
+// Light Theme Palette
+val BackgroundLight = Color(0xFFF8FAFC)
+val SurfaceLight = Color(0xFFFFFFFF)
+val CardLight = Color(0xFFF1F5F9)
+val BorderLight = Color(0xFFE2E8F0)
 
-
-// ── Aliases for backwards compatibility across existing components ──────────────
-val DiscordBlurple         = GrayscaleAccent
-val DiscordBlurpleDark     = GrayscaleAccentDark
-val DeepBlack              = GrayscaleDarkBg
-val DiscordDarkBase        = GrayscaleDarkBg
-val DiscordSurface         = GrayscaleDarkSurface
-val DiscordContainer       = GrayscaleDarkContainer
-val DiscordCard            = GrayscaleDarkCard
-val DiscordTextPrimary     = GrayscaleTextPrimary
-val DiscordTextMuted       = GrayscaleTextMuted
-val DiscordDivider         = GrayscaleDivider
-val DiscordGreen           = GrayscalePositive
-val DiscordRed             = GrayscaleDanger
-val DiscordYellow          = GrayscaleWarning
-
-// ── Light Theme Monochrome Palette ───────────────────────────────────────────────
-val LightBg                = Color(0xFFF3F4F6)
-val LightSurface           = Color(0xFFFFFFFF)
-val LightContainer         = Color(0xFFE5E7EB)
-val LightCard              = Color(0xFFE2E8F0)
-val LightTextPrimary       = Color(0xFF111827)
-val LightTextMuted         = Color(0xFF6B7280)
-val LightDivider           = Color(0xFFE5E7EB)
-val LightBubbleSent        = Color(0xFF374151)
-val LightBubbleRecv        = Color(0xFFE5E7EB)
-
+val TextPrimaryLight = Color(0xFF0F172A)
+val TextSecondaryLight = Color(0xFF475569)
+val TextMutedLight = Color(0xFF94A3B8)

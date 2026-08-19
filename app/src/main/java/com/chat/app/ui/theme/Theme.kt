@@ -1,138 +1,73 @@
 package com.chat.app.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-@Immutable
-data class AppColors(
-    val bg: Color,
-    val surface: Color,
-    val container: Color,
-    val card: Color,
-    val txt: Color,
-    val muted: Color,
-    val divider: Color,
-    val accent: Color,
-    val accentDark: Color,
-    val positive: Color,
-    val danger: Color,
-    val warning: Color,
-    val bubbleSent: Color,
-    val bubbleRecv: Color,
+private val DarkColorScheme = darkColorScheme(
+    primary = PrimaryBlue,
+    onPrimary = TextPrimaryDark,
+    primaryContainer = ObsidianCard,
+    onPrimaryContainer = PrimaryBlueLight,
+    secondary = AccentEmerald,
+    onSecondary = TextPrimaryDark,
+    background = ObsidianDark,
+    onBackground = TextPrimaryDark,
+    surface = ObsidianSurface,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = ObsidianCard,
+    onSurfaceVariant = TextSecondaryDark,
+    outline = ObsidianBorder,
+    error = AccentRose
 )
 
-val LocalAppColors = staticCompositionLocalOf {
-    AppColors(
-        bg = GrayscaleDarkBg,
-        surface = GrayscaleDarkSurface,
-        container = GrayscaleDarkContainer,
-        card = GrayscaleDarkCard,
-        txt = GrayscaleTextPrimary,
-        muted = GrayscaleTextMuted,
-        divider = GrayscaleDivider,
-        accent = GrayscaleAccent,
-        accentDark = GrayscaleAccentDark,
-        positive = GrayscalePositive,
-        danger = GrayscaleDanger,
-        warning = GrayscaleWarning,
-        bubbleSent = BubbleSent,
-        bubbleRecv = BubbleRecv,
-    )
-}
+private val LightColorScheme = lightColorScheme(
+    primary = PrimaryBlue,
+    onPrimary = SurfaceLight,
+    primaryContainer = CardLight,
+    onPrimaryContainer = PrimaryBlueDark,
+    secondary = AccentEmerald,
+    onSecondary = SurfaceLight,
+    background = BackgroundLight,
+    onBackground = TextPrimaryLight,
+    surface = SurfaceLight,
+    onSurface = TextPrimaryLight,
+    surfaceVariant = CardLight,
+    onSurfaceVariant = TextSecondaryLight,
+    outline = BorderLight,
+    error = AccentRose
+)
 
 @Composable
 fun ChatTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colors = if (darkTheme) {
-        AppColors(
-            bg = GrayscaleDarkBg,
-            surface = GrayscaleDarkSurface,
-            container = GrayscaleDarkContainer,
-            card = GrayscaleDarkCard,
-            txt = GrayscaleTextPrimary,
-            muted = GrayscaleTextMuted,
-            divider = GrayscaleDivider,
-            accent = GrayscaleAccent,
-            accentDark = GrayscaleAccentDark,
-            positive = GrayscalePositive,
-            danger = GrayscaleDanger,
-            warning = GrayscaleWarning,
-            bubbleSent = BubbleSent,
-            bubbleRecv = BubbleRecv,
-        )
-    } else {
-        AppColors(
-            bg = LightBg,
-            surface = LightSurface,
-            container = LightContainer,
-            card = LightCard,
-            txt = LightTextPrimary,
-            muted = LightTextMuted,
-            divider = LightDivider,
-            accent = LightTextPrimary,
-            accentDark = LightCard,
-            positive = GrayscalePositive,
-            danger = GrayscaleDanger,
-            warning = GrayscaleWarning,
-            bubbleSent = LightBubbleSent,
-            bubbleRecv = LightBubbleRecv,
-        )
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val view = LocalView.current
 
-    val darkColorScheme = darkColorScheme(
-        primary = colors.accent,
-        onPrimary = Color.White,
-        background = colors.bg,
-        onBackground = colors.txt,
-        surface = colors.surface,
-        onSurface = colors.txt,
-        surfaceVariant = colors.card,
-        outline = colors.divider,
-    )
-
-    val lightColorScheme = lightColorScheme(
-        primary = colors.accent,
-        onPrimary = Color.White,
-        background = colors.bg,
-        onBackground = colors.txt,
-        surface = colors.surface,
-        onSurface = colors.txt,
-        surfaceVariant = colors.card,
-        outline = colors.divider,
-    )
-
-    val view = androidx.compose.ui.platform.LocalView.current
     if (!view.isInEditMode) {
-        androidx.compose.runtime.SideEffect {
-            val window = (view.context as android.app.Activity).window
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-            val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = !darkTheme
-            insetsController.isAppearanceLightNavigationBars = !darkTheme
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
         }
     }
 
-    CompositionLocalProvider(
-        LocalAppColors provides colors
-    ) {
-        MaterialTheme(
-            colorScheme = if (darkTheme) darkColorScheme else lightColorScheme,
-            content = content
-        )
-    }
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
 }
-
-/** Shorthand for accessing modern Discord/Telegram app colors anywhere in composables. */
-val appColors: AppColors
-    @Composable get() = LocalAppColors.current
