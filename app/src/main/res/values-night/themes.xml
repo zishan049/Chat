@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Modern Chat Theme (Dark Mode / Night) -->
+    <!-- Sovereign Chat Theme (Night) -->
     <style name="Theme.Chat" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background_dark</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
-        <item name="android:statusBarColor">#0E1116</item>
-        <item name="android:navigationBarColor">#0E1116</item>
+        <item name="android:statusBarColor">#090A0C</item>
+        <item name="android:navigationBarColor">#090A0C</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowSplashScreenBackground">#0E1116</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowSplashScreenBackground">#090A0C</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
     </style>
 </resources>

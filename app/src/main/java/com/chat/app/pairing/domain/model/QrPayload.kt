@@ -44,16 +44,32 @@ data class QrPayload(
         fun fromJson(jsonStr: String): QrPayload? {
             return try {
                 val json = JSONObject(jsonStr)
+                val id = json.optString("id").takeIf { it.isNotBlank() } ?: return null
+                val name = json.optString("name").takeIf { it.isNotBlank() }
+                    ?: json.optString("displayName").takeIf { it.isNotBlank() }
+                    ?: "Peer"
+                val pk = json.optString("pk").takeIf { it.isNotBlank() }
+                    ?: json.optString("publicKeyBase64").takeIf { it.isNotBlank() }
+                    ?: return null
+                val fp = json.optString("fp").takeIf { it.isNotBlank() }
+                    ?: json.optString("fingerprint").takeIf { it.isNotBlank() }
+                    ?: ""
+                val ip = json.optString("ip").takeIf { it.isNotBlank() }
+                    ?: json.optString("lanIp").takeIf { it.isNotBlank() }
+                val port = json.optInt("port", 47832)
+                val ts = json.optLong("ts", json.optLong("timestamp", System.currentTimeMillis()))
+                val sig = json.optString("sig", json.optString("signature", ""))
+
                 QrPayload(
-                    version = json.optInt("v", 1),
-                    id = json.getString("id"),
-                    displayName = json.getString("name"),
-                    publicKeyBase64 = json.getString("pk"),
-                    fingerprint = json.getString("fp"),
-                    lanIp = json.optString("ip").takeIf { it.isNotBlank() },
-                    port = json.optInt("port", 47832),
-                    timestamp = json.optLong("ts", System.currentTimeMillis()),
-                    signature = json.optString("sig", "")
+                    version = json.optInt("v", json.optInt("version", 1)),
+                    id = id,
+                    displayName = name,
+                    publicKeyBase64 = pk,
+                    fingerprint = fp,
+                    lanIp = ip,
+                    port = port,
+                    timestamp = ts,
+                    signature = sig
                 )
             } catch (e: Exception) {
                 null

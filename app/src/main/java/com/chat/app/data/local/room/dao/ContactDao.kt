@@ -10,6 +10,9 @@ interface ContactDao {
     @Query("SELECT * FROM contacts WHERE isBlocked = 0 ORDER BY displayName ASC")
     fun observeAllContacts(): Flow<List<ContactEntity>>
 
+    @Query("SELECT * FROM contacts WHERE isBlocked = 1 ORDER BY displayName ASC")
+    fun observeBlockedContacts(): Flow<List<ContactEntity>>
+
     @Query("SELECT * FROM contacts ORDER BY displayName ASC")
     suspend fun getAllContacts(): List<ContactEntity>
 

@@ -9,6 +9,9 @@ interface IdentityDao {
     @Query("SELECT * FROM identity LIMIT 1")
     suspend fun getIdentity(): IdentityEntity?
 
+    @Query("SELECT * FROM identity LIMIT 1")
+    fun observeIdentity(): kotlinx.coroutines.flow.Flow<IdentityEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(identity: IdentityEntity)
 

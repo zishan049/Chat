@@ -1,5 +1,7 @@
 package com.chat.app.pairing.presentation
 
+import android.os.Handler
+import android.os.Looper
 import android.view.ViewGroup
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -79,36 +81,53 @@ private class QrImageAnalyzer(
     private val onQrDetected: (String) -> Unit
 ) : ImageAnalysis.Analyzer {
 
-    private var isDetected = false
+    private var lastDetectedTime = 0L
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val reader = MultiFormatReader().apply {
         val hints = EnumMap<DecodeHintType, Any>(DecodeHintType::class.java).apply {
             put(DecodeHintType.POSSIBLE_FORMATS, listOf(BarcodeFormat.QR_CODE))
             put(DecodeHintType.CHARACTER_SET, "UTF-8")
+            put(DecodeHintType.TRY_HARDER, java.lang.Boolean.TRUE)
         }
         setHints(hints)
     }
 
     override fun analyze(imageProxy: ImageProxy) {
-        if (isDetected) {
+        val now = System.currentTimeMillis()
+        if (now - lastDetectedTime < 1500L) {
             imageProxy.close()
             return
         }
 
-        val buffer: ByteBuffer = imageProxy.planes[0].buffer
-        val data = ByteArray(buffer.remaining())
-        buffer.get(data)
-
+        val plane = imageProxy.planes[0]
+        val buffer = plane.buffer
+        val rowStride = plane.rowStride
+        val pixelStride = plane.pixelStride
         val width = imageProxy.width
         val height = imageProxy.height
 
+        val nv21 = extractLuminance(buffer, width, height, rowStride, pixelStride)
+        val rotation = imageProxy.imageInfo.rotationDegrees
+
+        val rotatedData = if (rotation == 90 || rotation == 270) {
+            rotateYUV420Degree(nv21, width, height, rotation)
+        } else if (rotation == 180) {
+            rotateYUV180(nv21, width, height)
+        } else {
+            nv21
+        }
+
+        val finalWidth = if (rotation == 90 || rotation == 270) height else width
+        val finalHeight = if (rotation == 90 || rotation == 270) width else height
+
         val source = PlanarYUVLuminanceSource(
-            data,
-            width,
-            height,
+            rotatedData,
+            finalWidth,
+            finalHeight,
             0,
             0,
-            width,
-            height,
+            finalWidth,
+            finalHeight,
             false
         )
 
@@ -117,14 +136,81 @@ private class QrImageAnalyzer(
         try {
             val result = reader.decodeWithState(binaryBitmap)
             if (result != null && result.text.isNotBlank()) {
-                isDetected = true
-                onQrDetected(result.text)
+                lastDetectedTime = System.currentTimeMillis()
+                mainHandler.post {
+                    onQrDetected(result.text)
+                }
             }
         } catch (_: NotFoundException) {
+            // Normal when no barcode in frame
         } catch (_: Exception) {
         } finally {
             reader.reset()
             imageProxy.close()
         }
+    }
+
+    private fun extractLuminance(
+        buffer: ByteBuffer,
+        width: Int,
+        height: Int,
+        rowStride: Int,
+        pixelStride: Int
+    ): ByteArray {
+        val data = ByteArray(width * height)
+        if (rowStride == width && pixelStride == 1) {
+            buffer.position(0)
+            buffer.get(data, 0, width * height)
+            return data
+        }
+
+        var outPos = 0
+        val row = ByteArray(rowStride)
+        for (y in 0 until height) {
+            buffer.position(y * rowStride)
+            if (pixelStride == 1) {
+                buffer.get(data, outPos, width)
+            } else {
+                buffer.get(row, 0, minOf(rowStride, buffer.remaining()))
+                for (x in 0 until width) {
+                    data[outPos + x] = row[x * pixelStride]
+                }
+            }
+            outPos += width
+        }
+        return data
+    }
+
+    private fun rotateYUV420Degree(data: ByteArray, width: Int, height: Int, rotation: Int): ByteArray {
+        val rotated = ByteArray(data.size)
+        if (rotation == 90) {
+            var i = 0
+            for (x in 0 until width) {
+                for (y in height - 1 downTo 0) {
+                    rotated[i++] = data[y * width + x]
+                }
+            }
+            return rotated
+        } else if (rotation == 270) {
+            var i = 0
+            for (x in width - 1 downTo 0) {
+                for (y in 0 until height) {
+                    rotated[i++] = data[y * width + x]
+                }
+            }
+            return rotated
+        }
+        return data
+    }
+
+    private fun rotateYUV180(data: ByteArray, width: Int, height: Int): ByteArray {
+        val rotated = ByteArray(data.size)
+        var i = 0
+        for (y in height - 1 downTo 0) {
+            for (x in width - 1 downTo 0) {
+                rotated[i++] = data[y * width + x]
+            }
+        }
+        return rotated
     }
 }

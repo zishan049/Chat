@@ -21,6 +21,23 @@ data class MediaStorageBreakdown(
     val totalBytes: Long = 0L
 )
 
+data class MediaItem(
+    val file: File,
+    val name: String,
+    val path: String,
+    val sizeBytes: Long,
+    val lastModified: Long,
+    val category: MediaCategory
+)
+
+enum class MediaCategory(val subfolder: String, val label: String) {
+    ALL("", "All"),
+    IMAGES("images", "Images"),
+    VIDEOS("videos", "Videos"),
+    AUDIO("audio", "Voice & Audio"),
+    FILES("files", "Files & Docs")
+}
+
 @Singleton
 class MediaFileManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -133,5 +150,152 @@ class MediaFileManager @Inject constructor(
             filesBytes = files,
             totalBytes = images + videos + audio + files
         )
+    }
+
+    /**
+     * Returns all media files sorted by last modified descending.
+     */
+    suspend fun getAllMediaItems(category: MediaCategory = MediaCategory.ALL): List<MediaItem> = withContext(Dispatchers.IO) {
+        val root = File(context.filesDir, BASE_MEDIA_DIR)
+        if (!root.exists()) return@withContext emptyList()
+
+        val subfolders = when (category) {
+            MediaCategory.ALL -> listOf("images", "videos", "audio", "files")
+            MediaCategory.IMAGES -> listOf("images")
+            MediaCategory.VIDEOS -> listOf("videos")
+            MediaCategory.AUDIO -> listOf("audio")
+            MediaCategory.FILES -> listOf("files")
+        }
+
+        val items = mutableListOf<MediaItem>()
+        for (folderName in subfolders) {
+            val dir = File(root, folderName)
+            if (dir.exists() && dir.isDirectory) {
+                val files = dir.listFiles() ?: continue
+                for (file in files) {
+                    if (file.isFile && file.length() > 0) {
+                        val cat = when (folderName) {
+                            "images" -> MediaCategory.IMAGES
+                            "videos" -> MediaCategory.VIDEOS
+                            "audio" -> MediaCategory.AUDIO
+                            else -> MediaCategory.FILES
+                        }
+                        items.add(
+                            MediaItem(
+                                file = file,
+                                name = file.name,
+                                path = file.absolutePath,
+                                sizeBytes = file.length(),
+                                lastModified = file.lastModified(),
+                                category = cat
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        items.sortedByDescending { it.lastModified }
+    }
+
+    /**
+     * Deletes a specific media file from disk.
+     */
+    suspend fun deleteMediaFile(path: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val file = File(path)
+            if (file.exists()) file.delete() else false
+        } catch (e: Exception) {
+            AppLog.e(TAG, "Failed to delete media file: $path", e)
+            false
+        }
+    }
+
+    /**
+     * Clears media files by category or all.
+     */
+    suspend fun clearMedia(category: MediaCategory = MediaCategory.ALL): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val root = File(context.filesDir, BASE_MEDIA_DIR)
+            val subfolders = when (category) {
+                MediaCategory.ALL -> listOf("images", "videos", "audio", "files")
+                MediaCategory.IMAGES -> listOf("images")
+                MediaCategory.VIDEOS -> listOf("videos")
+                MediaCategory.AUDIO -> listOf("audio")
+                MediaCategory.FILES -> listOf("files")
+            }
+            for (folderName in subfolders) {
+                val dir = File(root, folderName)
+                if (dir.exists()) {
+                    dir.listFiles()?.forEach { it.delete() }
+                }
+            }
+            true
+        } catch (e: Exception) {
+            AppLog.e(TAG, "Failed to clear media: $category", e)
+            false
+        }
+    }
+
+    /**
+     * Reads a local avatar image, scales to thumbnail (max 96x96), and returns a compact Base64 string.
+     */
+    suspend fun getAvatarThumbnailBase64(avatarUri: String?): String? = withContext(Dispatchers.IO) {
+        if (avatarUri.isNullOrBlank()) return@withContext null
+        try {
+            val file = File(avatarUri)
+            val inputStream = if (file.exists()) {
+                file.inputStream()
+            } else {
+                context.contentResolver.openInputStream(Uri.parse(avatarUri))
+            } ?: return@withContext null
+
+            val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            if (originalBitmap == null) return@withContext null
+
+            val maxDim = 96
+            val width = originalBitmap.width
+            val height = originalBitmap.height
+            val scale = minOf(maxDim.toFloat() / width, maxDim.toFloat() / height, 1f)
+            val scaledBitmap = if (scale < 1f) {
+                android.graphics.Bitmap.createScaledBitmap(
+                    originalBitmap,
+                    (width * scale).toInt().coerceAtLeast(1),
+                    (height * scale).toInt().coerceAtLeast(1),
+                    true
+                )
+            } else {
+                originalBitmap
+            }
+
+            val baos = java.io.ByteArrayOutputStream()
+            scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 75, baos)
+            val bytes = baos.toByteArray()
+            android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+        } catch (e: Exception) {
+            AppLog.w(TAG, "Failed to create avatar thumbnail base64", e)
+            null
+        }
+    }
+
+    /**
+     * Saves received avatar Base64 string to local storage and returns the local file path.
+     */
+    suspend fun saveAvatarFromBase64(contactId: String, base64Data: String): String? = withContext(Dispatchers.IO) {
+        if (base64Data.isBlank()) return@withContext null
+        try {
+            val cleanBase64 = if (base64Data.contains(",")) base64Data.substringAfter(",") else base64Data
+            val bytes = android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT)
+            val targetFile = File(getMediaDirectory("avatars"), "avatar_${contactId}.jpg")
+            FileOutputStream(targetFile).use { fos ->
+                fos.write(bytes)
+                fos.flush()
+            }
+            AppLog.i(TAG, "Saved contact avatar from Base64: ${targetFile.absolutePath} (${bytes.size} bytes)")
+            targetFile.absolutePath
+        } catch (e: Exception) {
+            AppLog.w(TAG, "Failed to decode/save avatar from Base64 for contact $contactId", e)
+            null
+        }
     }
 }

@@ -153,6 +153,19 @@ class KeyManagerImpl @Inject constructor() : KeyManager {
         }
     }
 
+    override fun wipeIdentityKeys(): Result<Unit> {
+        return try {
+            if (keyStore.containsAlias(KEY_ALIAS)) {
+                keyStore.deleteEntry(KEY_ALIAS)
+                AppLog.i(TAG, "Identity keys permanently wiped from Keystore")
+            }
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            AppLog.e(TAG, "Failed to wipe identity keys", e)
+            Result.Failure(AppError.KeyGenerationFailed("Failed to wipe identity keys", e))
+        }
+    }
+
     /**
      * Computes a hex-encoded SHA-256 fingerprint of the raw public key bytes.
      * Format: "AB:CD:EF:12:..." (colon-separated hex pairs)

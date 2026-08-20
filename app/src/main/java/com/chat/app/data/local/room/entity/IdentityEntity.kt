@@ -12,8 +12,11 @@ data class IdentityEntity(
     @PrimaryKey val id: String,
     val displayName: String,
     val avatarUri: String? = null,
+    val age: Int? = null,
+    val bio: String? = null,
     val publicKeyBase64: String,
     val fingerprint: String,
     val createdAt: Long,
     val updatedAt: Long = createdAt,
 )
+

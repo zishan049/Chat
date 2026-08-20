@@ -8,6 +8,8 @@ interface ContactRepository {
 
     fun observeAllContacts(): Flow<List<Contact>>
 
+    fun observeBlockedContacts(): Flow<List<Contact>>
+
     suspend fun getAllContacts(): List<Contact>
 
     suspend fun getContact(contactId: String): Contact?

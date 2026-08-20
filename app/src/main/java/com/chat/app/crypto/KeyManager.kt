@@ -51,6 +51,11 @@ interface KeyManager {
         data: ByteArray,
         signature: ByteArray
     ): Boolean
+
+    /**
+     * Permanently deletes the identity key pair from the Keystore.
+     */
+    fun wipeIdentityKeys(): Result<Unit>
 }
 
 /**

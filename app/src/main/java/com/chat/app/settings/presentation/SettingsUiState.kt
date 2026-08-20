@@ -1,6 +1,7 @@
 package com.chat.app.settings.presentation
 
 import com.chat.app.data.local.media.MediaStorageBreakdown
+import com.chat.app.domain.model.Contact
 import com.chat.app.domain.model.Identity
 
 data class SettingsUiState(
@@ -8,6 +9,9 @@ data class SettingsUiState(
     val isDarkMode: Boolean = true,
     val isHapticsEnabled: Boolean = true,
     val storageBreakdown: MediaStorageBreakdown = MediaStorageBreakdown(),
+    val blockedContacts: List<Contact> = emptyList(),
+    val showBlockedContactsDialog: Boolean = false,
     val isClearingStorage: Boolean = false,
     val appVersion: String = "2.0.0"
 )
+

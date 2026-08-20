@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,31 +21,34 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chat.app.domain.model.Contact
 import com.chat.app.pairing.domain.model.PairingResult
-import com.chat.app.ui.components.PrimaryButton
-import com.chat.app.ui.components.UserAvatar
-import com.chat.app.ui.theme.AccentEmerald
-import com.chat.app.ui.theme.AccentRose
-import com.chat.app.ui.theme.PrimaryBlue
+import com.chat.app.ui.components.*
+import com.chat.app.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PairingScreen(
     onNavigateBack: () -> Unit,
     onPairingSuccess: () -> Unit,
+    initialTab: Int = 1,
     viewModel: PairingViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    LaunchedEffect(initialTab) {
+        viewModel.selectTab(initialTab)
+    }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -64,87 +65,99 @@ fun PairingScreen(
         hasCameraPermission = isGranted
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Pair Contact",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
+    LaunchedEffect(state.selectedTab, hasCameraPermission) {
+        if (state.selectedTab == 1 && !hasCameraPermission) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    androidx.activity.compose.BackHandler(onBack = onNavigateBack)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBackground)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .statusBarsPadding()
         ) {
-            TabRow(
-                selectedTabIndex = state.selectedTab,
-                containerColor = MaterialTheme.colorScheme.background,
-                contentColor = PrimaryBlue,
-                divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)) }
+            // Header Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Tab(
-                    selected = state.selectedTab == 0,
-                    onClick = { viewModel.selectTab(0) },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.QrCode, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("My QR Code")
-                        }
-                    }
+                GlassIconButton(
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    onClick = onNavigateBack,
+                    size = 38.dp,
+                    iconSize = 18.dp,
+                    contentDescription = "Back"
                 )
-                Tab(
-                    selected = state.selectedTab == 1,
+
+                Text(
+                    text = "Pair Contact",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                )
+
+                Spacer(modifier = Modifier.size(38.dp))
+            }
+
+            // Glass Segmented Tab Selector
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(GlassWhiteUltraLow)
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                GlassFilterChip(
+                    text = "My QR Code",
+                    isSelected = state.selectedTab == 0,
+                    onClick = { viewModel.selectTab(0) },
+                    modifier = Modifier.weight(1f)
+                )
+                GlassFilterChip(
+                    text = "Scan QR Code",
+                    isSelected = state.selectedTab == 1,
                     onClick = {
                         viewModel.selectTab(1)
                         if (!hasCameraPermission) {
                             permissionLauncher.launch(Manifest.permission.CAMERA)
                         }
                     },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Scan QR Code")
-                        }
-                    }
+                    modifier = Modifier.weight(1f)
                 )
             }
 
             if (state.errorMessage != null) {
-                Surface(
-                    color = AccentRose.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(12.dp),
+                GlassSurface(
+                    backgroundColor = AccentDestructive.copy(alpha = 0.15f),
+                    borderColor = AccentDestructive.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = 24.dp, vertical = 10.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Warning, contentDescription = null, tint = AccentRose)
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = AccentDestructive, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = state.errorMessage ?: "",
-                            style = MaterialTheme.typography.bodySmall.copy(color = AccentRose)
+                            style = TextStyle(fontSize = 12.sp, color = TextPrimary)
                         )
                     }
                 }
@@ -172,7 +185,7 @@ fun PairingScreen(
         )
     }
 
-    // Modal 2: CRITICAL Key Mismatch Warning (TOFU)
+    // Modal 2: Key Mismatch Warning (TOFU)
     state.keyMismatchWarning?.let { warning ->
         KeyMismatchWarningDialog(
             warning = warning,
@@ -194,12 +207,13 @@ private fun MyQrCodeTab(state: PairingUiState) {
         verticalArrangement = Arrangement.Center
     ) {
         if (state.isLoadingQr || state.selfQrBitmap == null) {
-            CircularProgressIndicator(color = PrimaryBlue)
+            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(36.dp))
         } else {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                modifier = Modifier.padding(bottom = 16.dp)
+            GlassSurface(
+                shape = RoundedCornerShape(28.dp),
+                backgroundColor = GlassWhiteLow,
+                borderColor = GlassBorder,
+                modifier = Modifier.padding(bottom = 20.dp)
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -208,9 +222,9 @@ private fun MyQrCodeTab(state: PairingUiState) {
                     Box(
                         modifier = Modifier
                             .size(240.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(18.dp))
                             .background(Color.White)
-                            .padding(12.dp),
+                            .padding(14.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -224,24 +238,47 @@ private fun MyQrCodeTab(state: PairingUiState) {
 
                     Text(
                         text = state.selfIdentity?.displayName ?: "My Device",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        style = TextStyle(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Security,
-                            contentDescription = null,
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(14.dp)
+                    Text(
+                        text = "Fingerprint: ${state.selfIdentity?.fingerprint?.take(16)}…",
+                        style = TextStyle(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                            color = AppTextSecondary
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(AppGlassLow)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Sync,
+                            contentDescription = null,
+                            tint = AccentCyan,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Fingerprint: ${state.selfIdentity?.fingerprint?.take(16)}…",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Auto-rotates every 45s",
+                            style = TextStyle(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AppTextSecondary
                             )
                         )
                     }
@@ -249,12 +286,13 @@ private fun MyQrCodeTab(state: PairingUiState) {
             }
 
             Text(
-                text = "Show this QR code to a peer on the same Wi-Fi or in person to establish an end-to-end encrypted channel.",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = "Show this QR code to a friend to connect securely.",
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    color = AppTextSecondary,
                     textAlign = TextAlign.Center
                 ),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 24.dp)
             )
         }
     }
@@ -275,26 +313,27 @@ private fun ScanQrCodeTab(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = Icons.Default.CameraAlt,
+                imageVector = Icons.Outlined.CameraAlt,
                 contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(64.dp)
+                tint = TextSecondary,
+                modifier = Modifier.size(56.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Camera Permission Required",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Camera access is needed to scan peer QR codes for instant cryptographic pairing.",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    color = TextSecondary,
                     textAlign = TextAlign.Center
                 )
             )
             Spacer(modifier = Modifier.height(24.dp))
-            PrimaryButton(text = "Grant Permission", onClick = onRequestPermission)
+            GlassButton(text = "Grant Permission", isPrimary = true, onClick = onRequestPermission)
         }
     } else {
         Box(
@@ -306,11 +345,11 @@ private fun ScanQrCodeTab(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // QR Target Overlay Frame
+            // Glass Target Overlay Frame
             Box(
                 modifier = Modifier
                     .size(260.dp)
-                    .border(3.dp, PrimaryBlue, RoundedCornerShape(20.dp))
+                    .border(2.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(24.dp))
             )
         }
     }
@@ -322,51 +361,70 @@ private fun ConfirmNewContactDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                UserAvatar(name = contact.displayName, modifier = Modifier.size(36.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Add Contact", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            }
-        },
-        text = {
-            Column {
+    Dialog(onDismissRequest = onDismiss) {
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            backgroundColor = AppTheme.colors.surface,
+            borderColor = AppGlassBorderBright
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    UserAvatar(
+                        name = contact.displayName,
+                        avatarUri = contact.avatarUri,
+                        isOnline = true,
+                        size = 48.dp
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Text(
+                        text = "Add Contact",
+                        style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AppTextPrimary)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
                     text = "Verified cryptographic signature for ${contact.displayName}.",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = TextStyle(fontSize = 14.sp, color = AppTextSecondary)
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
-                    text = "Key Fingerprint:",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    text = contact.fingerprint,
-                    style = MaterialTheme.typography.bodySmall.copy(
+                    text = "Fingerprint: ${contact.fingerprint}",
+                    style = TextStyle(
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontSize = 11.sp,
+                        color = AppTextTertiary
                     )
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", color = AppTextSecondary)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    GlassButton(
+                        text = "Add Contact",
+                        isPrimary = true,
+                        onClick = onConfirm,
+                        modifier = Modifier.width(130.dp)
+                    )
+                }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-            ) {
-                Text("Add Contact")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-        shape = RoundedCornerShape(20.dp)
-    )
+        }
+    }
 }
 
 @Composable
@@ -375,72 +433,62 @@ private fun KeyMismatchWarningDialog(
     onAcceptNewKey: () -> Unit,
     onReject: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onReject,
-        icon = {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = "Security Alert",
-                tint = AccentRose,
-                modifier = Modifier.size(36.dp)
-            )
-        },
-        title = {
-            Text(
-                text = "Security Alert: Key Changed!",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = AccentRose
-                )
-            )
-        },
-        text = {
-            Column {
-                Text(
-                    text = "The identity key for '${warning.existingContact.displayName}' does NOT match the previously verified key.\n\nThis could mean the contact reinstalled the app, OR someone is intercepting your connection (MITM attack).",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "Previous Fingerprint:",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    text = warning.existingContact.fingerprint,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 9.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "New Scanned Fingerprint:",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = AccentRose)
-                )
-                Text(
-                    text = warning.newFingerprint,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 9.sp,
-                        color = AccentRose
-                    )
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onAcceptNewKey,
-                colors = ButtonDefaults.buttonColors(containerColor = AccentRose)
+    Dialog(onDismissRequest = onReject) {
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            backgroundColor = AppTheme.colors.surface,
+            borderColor = AccentDestructive.copy(alpha = 0.5f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
             ) {
-                Text("Accept New Key")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Security Alert",
+                        tint = AccentDestructive,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Security Warning: Key Changed!",
+                        style = TextStyle(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentDestructive
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "The identity key for '${warning.existingContact.displayName}' does NOT match the previously verified key.\n\nThis could indicate that the contact reinstalled the app or someone is attempting an interception attack.",
+                    style = TextStyle(fontSize = 13.sp, color = TextSecondary, lineHeight = 18.sp)
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onReject) {
+                        Text("Reject", color = TextSecondary)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    GlassButton(
+                        text = "Accept Key",
+                        isPrimary = true,
+                        onClick = onAcceptNewKey,
+                        modifier = Modifier.width(130.dp)
+                    )
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onReject) {
-                Text("Reject & Abort")
-            }
-        },
-        shape = RoundedCornerShape(20.dp)
-    )
+        }
+    }
 }
+

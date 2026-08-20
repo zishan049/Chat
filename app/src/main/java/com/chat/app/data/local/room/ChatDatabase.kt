@@ -22,8 +22,8 @@ import com.chat.app.data.local.room.entity.*
         SessionEntity::class,
         AttachmentEntity::class,
     ],
-    version = 1,
-    exportSchema = true,
+    version = 3,
+    exportSchema = false,
 )
 abstract class ChatDatabase : RoomDatabase() {
     abstract fun identityDao(): IdentityDao

@@ -20,4 +20,5 @@ interface ConversationRepository {
     suspend fun markRead(conversationId: String): Result<Unit>
 
     suspend fun deleteConversation(conversationId: String): Result<Unit>
+    suspend fun clearAllConversations(): Result<Unit>
 }

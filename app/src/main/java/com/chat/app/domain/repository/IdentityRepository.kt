@@ -10,11 +10,16 @@ import com.chat.app.domain.model.Identity
 interface IdentityRepository {
 
     /**
-     * Creates a new local identity with the given display name.
+     * Creates a new local identity with the given display name and optional profile details.
      * Generates an EC key pair and persists the identity.
      * Should only be called once during onboarding.
      */
-    suspend fun createIdentity(displayName: String, avatarUri: String? = null): Result<Identity>
+    suspend fun createIdentity(
+        displayName: String,
+        avatarUri: String? = null,
+        age: Int? = null,
+        bio: String? = null,
+    ): Result<Identity>
 
     /**
      * Loads the existing local identity.
@@ -23,12 +28,27 @@ interface IdentityRepository {
     suspend fun getIdentity(): Result<Identity>
 
     /**
-     * Updates the display name and/or avatar of the existing identity.
+     * Observes the active local identity stream in real-time.
      */
-    suspend fun updateIdentity(displayName: String, avatarUri: String? = null): Result<Identity>
+    fun observeIdentity(): kotlinx.coroutines.flow.Flow<Identity?>
+
+    /**
+     * Updates the display name, avatar, age, and/or bio of the existing identity.
+     */
+    suspend fun updateIdentity(
+        displayName: String,
+        avatarUri: String? = null,
+        age: Int? = null,
+        bio: String? = null,
+    ): Result<Identity>
 
     /**
      * Returns true if a local identity exists.
      */
     suspend fun hasIdentity(): Boolean
+
+    /**
+     * Permanently deletes the local identity record and cryptographic keys.
+     */
+    suspend fun deleteIdentity(): Result<Unit>
 }

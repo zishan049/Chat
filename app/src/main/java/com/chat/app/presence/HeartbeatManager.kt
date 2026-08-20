@@ -37,6 +37,8 @@ class HeartbeatManager @Inject constructor(
         activeChatPeerId = peerId
     }
 
+    fun getActiveConversationPeer(): String? = activeChatPeerId
+
     fun start() {
         if (pingJob?.isActive == true) return
 
@@ -66,9 +68,9 @@ class HeartbeatManager @Inject constructor(
 
     private suspend fun sendHeartbeats() {
         val identity = (identityRepository.getIdentity() as? com.chat.app.core.common.Result.Success)?.data ?: return
-        val peerId = activeChatPeerId
-        if (peerId != null) {
-            val contact = contactRepository.getContact(peerId) ?: return
+        val contacts = contactRepository.getAllContacts()
+        for (contact in contacts) {
+            if (contact.isBlocked) continue
             val pingEnvelope = Envelope(
                 messageId = UUID.randomUUID().toString(),
                 senderId = identity.id,

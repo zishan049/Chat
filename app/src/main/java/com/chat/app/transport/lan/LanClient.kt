@@ -18,8 +18,8 @@ class LanClient @Inject constructor() {
 
     companion object {
         private const val TAG = "LanClient"
-        private const val CONNECT_TIMEOUT_MS = 2500
-        private const val SOCKET_TIMEOUT_MS = 3000
+        private const val CONNECT_TIMEOUT_MS = 2000
+        private const val SOCKET_TIMEOUT_MS = 3500
     }
 
     suspend fun sendEnvelope(
@@ -36,13 +36,13 @@ class LanClient @Inject constructor() {
 
         try {
             socket = Socket()
+            socket.tcpNoDelay = true
             socket.connect(InetSocketAddress(targetIp, targetPort), CONNECT_TIMEOUT_MS)
             socket.soTimeout = SOCKET_TIMEOUT_MS
 
             val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8), true)
             writer.println(jsonPayload)
             writer.flush()
-            socket.close()
 
             AppLog.i(TAG, "Successfully delivered LAN Envelope ${AppLog.truncatedId(envelope.envelopeId)} to $targetIp:$targetPort")
             SendResult.Success

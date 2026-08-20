@@ -7,7 +7,7 @@ import com.chat.app.pairing.domain.model.PairingResult
 import com.chat.app.pairing.domain.model.QrPayload
 
 data class PairingUiState(
-    val selectedTab: Int = 0, // 0 = Show QR, 1 = Scan QR
+    val selectedTab: Int = 1, // 0 = Show QR, 1 = Scan QR (Default to Scan QR when adding a contact)
     val selfIdentity: Identity? = null,
     val selfQrPayloadString: String? = null,
     val selfQrBitmap: Bitmap? = null,

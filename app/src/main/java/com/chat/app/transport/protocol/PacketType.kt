@@ -7,7 +7,9 @@ enum class PacketType {
     TYPING,
     PRESENCE_PING,
     PRESENCE_PONG,
-    MEDIA_CHUNK;
+    MEDIA_CHUNK,
+    PAIRING_HANDSHAKE,
+    PAIRING_ACK;
 
     companion object {
         fun fromString(value: String): PacketType? {

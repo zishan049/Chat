@@ -6,6 +6,7 @@ import com.chat.app.domain.model.Message
 data class ChatUiState(
     val conversationId: String = "",
     val contact: Contact? = null,
+    val isOnline: Boolean = false,
     val messages: List<Message> = emptyList(),
     val textInput: String = "",
     val isSending: Boolean = false,

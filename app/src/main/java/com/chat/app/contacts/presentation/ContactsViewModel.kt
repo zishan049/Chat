@@ -2,8 +2,11 @@ package com.chat.app.contacts.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chat.app.core.common.Result
 import com.chat.app.domain.model.Contact
 import com.chat.app.domain.repository.ContactRepository
+import com.chat.app.domain.repository.IdentityRepository
+import com.chat.app.presence.domain.PresenceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,17 +14,33 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ContactsViewModel @Inject constructor(
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
+    private val identityRepository: IdentityRepository,
+    private val presenceRepository: PresenceRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     private val _uiState = MutableStateFlow(ContactsUiState())
 
+    init {
+        loadSelfIdentity()
+    }
+
+    private fun loadSelfIdentity() {
+        viewModelScope.launch {
+            val result = identityRepository.getIdentity()
+            if (result is Result.Success) {
+                _uiState.update { it.copy(selfIdentity = result.data) }
+            }
+        }
+    }
+
     val uiState: StateFlow<ContactsUiState> = combine(
         contactRepository.observeAllContacts(),
-        _searchQuery,
-        _uiState
-    ) { contacts, query, state ->
+        identityRepository.observeIdentity(),
+        presenceRepository.observePresenceMap(),
+        _searchQuery
+    ) { contacts, identity, presenceMap, query ->
         val filtered = if (query.isBlank()) {
             contacts
         } else {
@@ -30,8 +49,10 @@ class ContactsViewModel @Inject constructor(
                 it.displayName.contains(query, ignoreCase = true)
             }
         }
-        state.copy(
+        _uiState.value.copy(
+            selfIdentity = identity,
             contacts = filtered,
+            presenceMap = presenceMap,
             searchQuery = query
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ContactsUiState())

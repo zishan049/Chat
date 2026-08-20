@@ -6,6 +6,7 @@ import com.chat.app.core.common.Result
 import com.chat.app.domain.repository.ConversationRepository
 import com.chat.app.domain.repository.IdentityRepository
 import com.chat.app.domain.repository.MessageRepository
+import com.chat.app.presence.domain.PresenceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,24 +16,18 @@ import javax.inject.Inject
 class ChatListViewModel @Inject constructor(
     private val identityRepository: IdentityRepository,
     private val conversationRepository: ConversationRepository,
-    private val messageRepository: MessageRepository
+    private val messageRepository: MessageRepository,
+    private val presenceRepository: PresenceRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    private val _selfIdentity = flow {
-        val result = identityRepository.getIdentity()
-        if (result is Result.Success) {
-            emit(result.data)
-        } else {
-            emit(null)
-        }
-    }
 
     val uiState: StateFlow<ChatListUiState> = combine(
-        _selfIdentity,
+        identityRepository.observeIdentity(),
         conversationRepository.observeAllConversations(),
+        presenceRepository.observePresenceMap(),
         _searchQuery
-    ) { identity, conversations, query ->
+    ) { identity, conversations, presenceMap, query ->
         val filtered = if (query.isBlank()) {
             conversations
         } else {
@@ -44,6 +39,7 @@ class ChatListViewModel @Inject constructor(
         ChatListUiState(
             selfIdentity = identity,
             conversations = filtered,
+            presenceMap = presenceMap,
             searchQuery = query
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ChatListUiState())

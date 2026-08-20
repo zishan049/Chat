@@ -16,12 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chat.app.ui.theme.AccentRose
-import com.chat.app.ui.theme.PrimaryBlue
+import com.chat.app.ui.components.*
+import com.chat.app.ui.theme.*
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +44,7 @@ fun AudioRecordingModal(
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = 1.25f,
+        targetValue = 1.2f,
         animationSpec = infiniteRepeatable(
             animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -53,8 +54,16 @@ fun AudioRecordingModal(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        containerColor = AppTheme.colors.surface,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 10.dp)
+                    .size(width = 36.dp, height = 4.dp)
+                    .background(AppGlassBorderBright, RoundedCornerShape(2.dp))
+            )
+        },
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
@@ -64,8 +73,12 @@ fun AudioRecordingModal(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Recording Voice Note",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                text = "Recording Voice Message",
+                style = TextStyle(
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTextPrimary
+                )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -75,21 +88,21 @@ fun AudioRecordingModal(
                     .size(80.dp)
                     .scale(pulseScale)
                     .clip(CircleShape)
-                    .background(AccentRose.copy(alpha = 0.15f)),
+                    .background(GlassWhiteMedium),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .size(54.dp)
                         .clip(CircleShape)
-                        .background(AccentRose),
+                        .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Mic,
                         contentDescription = "Recording",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        tint = BackgroundBlack,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -100,43 +113,42 @@ fun AudioRecordingModal(
             val seconds = secondsElapsed % 60
             Text(
                 text = "%02d:%02d".format(minutes, seconds),
-                style = MaterialTheme.typography.headlineMedium.copy(
+                style = TextStyle(
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
                 )
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
+                GlassButton(
+                    text = "Cancel",
+                    icon = Icons.Default.Close,
+                    isPrimary = false,
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentRose)
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Cancel")
-                }
+                    modifier = Modifier.weight(1f)
+                )
 
-                Button(
+                GlassButton(
+                    text = "Send",
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    isPrimary = true,
                     onClick = {
                         isRecording = false
                         onSendRecording(secondsElapsed)
                         onDismiss()
                     },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Send Audio")
-                }
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
+

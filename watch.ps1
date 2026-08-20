@@ -227,8 +227,14 @@ function BuildAndDeploy {
     }
 
     # ── Build Step ──
+    $gradleCmd = ".\gradlew.bat"
+    if (-not (Test-Path $gradleCmd)) {
+        $gradleCmd = "gradlew.bat"
+    }
+
     $gradleArgs = @("assembleDebug")
     if ($Clean) {
+        & $gradleCmd --stop 2>&1 | Out-Null
         $gradleArgs = @("clean", "assembleDebug")
         Write-Info "Executing clean build..."
     }
@@ -236,18 +242,40 @@ function BuildAndDeploy {
     Write-Host ""
     Write-Info "Running Gradle assembleDebug..."
     $startTime = Get-Date
-    
-    $gradleCmd = ".\gradlew.bat"
-    if (-not (Test-Path $gradleCmd)) {
-        $gradleCmd = "gradlew.bat"
-    }
 
     $buildResult = Start-Process -FilePath $gradleCmd -ArgumentList $gradleArgs -NoNewWindow -PassThru -Wait
     $duration = ((Get-Date) - $startTime).TotalSeconds
 
     if ($buildResult.ExitCode -ne 0) {
-        Write-Fail ("Build failed with exit code {0}  ›  {1:N1}s" -f $buildResult.ExitCode, $duration)
-        return $false
+        Write-Warn ("Initial build failed (exit code {0}). Stopping stale Gradle daemons and clearing locked intermediates..." -f $buildResult.ExitCode)
+        
+        # Stop stale or conflicting daemons holding Windows file locks
+        & $gradleCmd --stop 2>&1 | Out-Null
+        
+        # Remove locked/stale intermediate and generated cache directories
+        $stuckPaths = @(
+            "$PSScriptRoot\app\build\intermediates",
+            "$PSScriptRoot\app\build\generated\ksp",
+            "$PSScriptRoot\app\build\kspCaches",
+            "$PSScriptRoot\app\build\tmp"
+        )
+        foreach ($p in $stuckPaths) {
+            if (Test-Path $p) {
+                try {
+                    Remove-Item -Path $p -Recurse -Force -ErrorAction SilentlyContinue
+                } catch {}
+            }
+        }
+
+        Write-Info "Retrying Gradle assembleDebug..."
+        $retryStart = Get-Date
+        $buildResult = Start-Process -FilePath $gradleCmd -ArgumentList $gradleArgs -NoNewWindow -PassThru -Wait
+        $duration = ((Get-Date) - $retryStart).TotalSeconds
+
+        if ($buildResult.ExitCode -ne 0) {
+            Write-Fail ("Build failed after retry with exit code {0}  ›  {1:N1}s" -f $buildResult.ExitCode, $duration)
+            return $false
+        }
     }
     Write-OK ("Build succeeded  ›  {0:N1}s" -f $duration)
 

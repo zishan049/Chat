@@ -9,6 +9,9 @@ import com.chat.app.data.local.room.dao.IdentityDao
 import com.chat.app.data.local.room.entity.IdentityEntity
 import com.chat.app.domain.model.Identity
 import com.chat.app.domain.repository.IdentityRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
@@ -25,7 +28,12 @@ class IdentityRepositoryImpl @Inject constructor(
         private const val TAG = "IdentityRepo"
     }
 
-    override suspend fun createIdentity(displayName: String, avatarUri: String?): Result<Identity> =
+    override suspend fun createIdentity(
+        displayName: String,
+        avatarUri: String?,
+        age: Int?,
+        bio: String?,
+    ): Result<Identity> =
         withContext(dispatchers.io) {
             try {
                 // Check if identity already exists
@@ -48,6 +56,8 @@ class IdentityRepositoryImpl @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     displayName = displayName,
                     avatarUri = avatarUri,
+                    age = age,
+                    bio = bio,
                     publicKeyBase64 = keys.publicKeyBase64,
                     fingerprint = keys.fingerprint,
                     createdAt = now,
@@ -79,7 +89,18 @@ class IdentityRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun updateIdentity(displayName: String, avatarUri: String?): Result<Identity> =
+    override fun observeIdentity(): Flow<Identity?> {
+        return identityDao.observeIdentity()
+            .map { it?.toDomain() }
+            .flowOn(dispatchers.io)
+    }
+
+    override suspend fun updateIdentity(
+        displayName: String,
+        avatarUri: String?,
+        age: Int?,
+        bio: String?,
+    ): Result<Identity> =
         withContext(dispatchers.io) {
             try {
                 val existing = identityDao.getIdentity()
@@ -88,6 +109,8 @@ class IdentityRepositoryImpl @Inject constructor(
                 val updated = existing.copy(
                     displayName = displayName,
                     avatarUri = avatarUri ?: existing.avatarUri,
+                    age = age ?: existing.age,
+                    bio = bio ?: existing.bio,
                     updatedAt = System.currentTimeMillis(),
                 )
                 identityDao.update(updated)
@@ -110,10 +133,25 @@ class IdentityRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun deleteIdentity(): Result<Unit> =
+        withContext(dispatchers.io) {
+            try {
+                identityDao.deleteAll()
+                keyManager.wipeIdentityKeys()
+                AppLog.i(TAG, "Local identity deleted and keys wiped")
+                Result.Success(Unit)
+            } catch (e: Exception) {
+                AppLog.e(TAG, "Failed to delete identity", e)
+                Result.Failure(AppError.DatabaseError("Failed to delete identity", e))
+            }
+        }
+
     private fun IdentityEntity.toDomain(): Identity = Identity(
         id = id,
         displayName = displayName,
         avatarUri = avatarUri,
+        age = age,
+        bio = bio,
         publicKeyBase64 = publicKeyBase64,
         fingerprint = fingerprint,
         createdAt = createdAt,

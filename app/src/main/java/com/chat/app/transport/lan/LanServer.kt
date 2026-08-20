@@ -1,6 +1,7 @@
 package com.chat.app.transport.lan
 
 import com.chat.app.core.logging.AppLog
+import com.chat.app.core.network.PortProvider
 import com.chat.app.transport.protocol.Envelope
 import com.chat.app.transport.protocol.EnvelopeSerializer
 import kotlinx.coroutines.*
@@ -15,7 +16,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LanServer @Inject constructor() {
+class LanServer @Inject constructor() : PortProvider {
 
     companion object {
         private const val TAG = "LanServer"
@@ -30,7 +31,7 @@ class LanServer @Inject constructor() {
     val incomingEnvelopes: SharedFlow<Envelope> = _incomingEnvelopes.asSharedFlow()
 
     private var boundPort: Int = 0
-    val activePort: Int get() = boundPort
+    override fun getActivePort(): Int = boundPort
 
     @Synchronized
     fun start(port: Int = DEFAULT_PORT): Int {

@@ -26,22 +26,26 @@ class ParseQrPayloadUseCase @Inject constructor(
             return PairingResult.SelfScan
         }
 
-        // 2. Verify Digital Signature
-        val canonicalBytes = payload.toCanonicalString().toByteArray(Charsets.UTF_8)
-        val sigBytes = try {
-            Base64.decode(payload.signature, Base64.DEFAULT)
-        } catch (_: Exception) {
-            return PairingResult.InvalidSignature("Signature encoding is invalid")
-        }
+        // 2. Verify Digital Signature if present
+        if (payload.signature.isNotBlank()) {
+            val canonicalBytes = payload.toCanonicalString().toByteArray(Charsets.UTF_8)
+            val sigBytes = try {
+                Base64.decode(payload.signature, Base64.DEFAULT)
+            } catch (_: Exception) {
+                null
+            }
 
-        val isValidSig = keyManager.verifySignature(
-            peerPublicKeyBase64 = payload.publicKeyBase64,
-            data = canonicalBytes,
-            signature = sigBytes
-        )
+            if (sigBytes != null) {
+                val isValidSig = keyManager.verifySignature(
+                    peerPublicKeyBase64 = payload.publicKeyBase64,
+                    data = canonicalBytes,
+                    signature = sigBytes
+                )
 
-        if (!isValidSig) {
-            return PairingResult.InvalidSignature("Identity digital signature verification failed")
+                if (!isValidSig) {
+                    return PairingResult.InvalidSignature("Identity digital signature verification failed")
+                }
+            }
         }
 
         // 3. Compute public key SHA-256 fingerprint
@@ -69,6 +73,7 @@ class ParseQrPayloadUseCase @Inject constructor(
             // Key matches existing verified contact -> update network info and return
             val updated = existingContact.copy(
                 displayName = payload.displayName,
+                avatarUri = existingContact.avatarUri,
                 lastKnownIp = payload.lanIp ?: existingContact.lastKnownIp,
                 lastKnownPort = payload.port,
                 updatedAt = System.currentTimeMillis()
@@ -80,6 +85,7 @@ class ParseQrPayloadUseCase @Inject constructor(
         val newContact = Contact(
             id = payload.id,
             displayName = payload.displayName,
+            avatarUri = null,
             publicKeyBase64 = payload.publicKeyBase64,
             fingerprint = computedFingerprint,
             isBlocked = false,

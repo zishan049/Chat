@@ -26,6 +26,12 @@ class ContactRepositoryImpl @Inject constructor(
             .flowOn(dispatchers.io)
     }
 
+    override fun observeBlockedContacts(): Flow<List<Contact>> {
+        return contactDao.observeBlockedContacts()
+            .map { list -> list.map { it.toDomain() } }
+            .flowOn(dispatchers.io)
+    }
+
     override suspend fun getAllContacts(): List<Contact> = withContext(dispatchers.io) {
         contactDao.getAllContacts().map { it.toDomain() }
     }

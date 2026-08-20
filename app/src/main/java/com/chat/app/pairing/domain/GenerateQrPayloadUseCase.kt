@@ -3,6 +3,7 @@ package com.chat.app.pairing.domain
 import android.util.Base64
 import com.chat.app.core.common.AppError
 import com.chat.app.core.common.Result
+import com.chat.app.core.network.PortProvider
 import com.chat.app.crypto.KeyManager
 import com.chat.app.domain.repository.IdentityRepository
 import com.chat.app.pairing.domain.model.QrPayload
@@ -12,7 +13,8 @@ import javax.inject.Inject
 
 class GenerateQrPayloadUseCase @Inject constructor(
     private val identityRepository: IdentityRepository,
-    private val keyManager: KeyManager
+    private val keyManager: KeyManager,
+    private val portProvider: PortProvider
 ) {
 
     suspend operator fun invoke(): Result<String> {
@@ -23,6 +25,7 @@ class GenerateQrPayloadUseCase @Inject constructor(
         val identity = (identityResult as Result.Success).data
 
         val localIp = getLocalIpAddress()
+
         val unsignedPayload = QrPayload(
             version = 1,
             id = identity.id,
@@ -30,7 +33,7 @@ class GenerateQrPayloadUseCase @Inject constructor(
             publicKeyBase64 = identity.publicKeyBase64,
             fingerprint = identity.fingerprint,
             lanIp = localIp,
-            port = 47832,
+            port = portProvider.getActivePort(),
             timestamp = System.currentTimeMillis()
         )
 

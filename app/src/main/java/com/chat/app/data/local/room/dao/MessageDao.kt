@@ -57,4 +57,7 @@ interface MessageDao {
      */
     @Query("UPDATE messages SET status = 'DELIVERED' WHERE id = :messageId AND status = 'SENT'")
     suspend fun markAsDelivered(messageId: String)
+
+    @Query("DELETE FROM messages")
+    suspend fun deleteAll()
 }

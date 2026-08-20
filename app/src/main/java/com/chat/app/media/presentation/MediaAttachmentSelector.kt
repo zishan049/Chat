@@ -1,11 +1,12 @@
 package com.chat.app.media.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,13 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chat.app.ui.theme.AccentAmber
-import com.chat.app.ui.theme.AccentEmerald
-import com.chat.app.ui.theme.AccentRose
-import com.chat.app.ui.theme.PrimaryBlue
+import com.chat.app.ui.components.GlassSurface
+import com.chat.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,18 +31,30 @@ fun MediaAttachmentSelector(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        containerColor = AppTheme.colors.surface,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 10.dp)
+                    .size(width = 36.dp, height = 4.dp)
+                    .background(AppGlassBorderBright, RoundedCornerShape(2.dp))
+            )
+        },
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp, top = 8.dp)
+                .padding(bottom = 36.dp, top = 4.dp)
         ) {
             Text(
                 text = "Share Content",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTextPrimary
+                ),
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
@@ -51,9 +63,8 @@ fun MediaAttachmentSelector(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 AttachmentOption(
-                    icon = Icons.Default.Image,
+                    icon = Icons.Outlined.Image,
                     label = "Gallery",
-                    color = PrimaryBlue,
                     onClick = {
                         onDismiss()
                         onSelectGallery()
@@ -61,9 +72,8 @@ fun MediaAttachmentSelector(
                 )
 
                 AttachmentOption(
-                    icon = Icons.Default.InsertDriveFile,
+                    icon = Icons.Outlined.InsertDriveFile,
                     label = "Document",
-                    color = AccentAmber,
                     onClick = {
                         onDismiss()
                         onSelectDocument()
@@ -71,9 +81,8 @@ fun MediaAttachmentSelector(
                 )
 
                 AttachmentOption(
-                    icon = Icons.Default.Mic,
+                    icon = Icons.Outlined.Mic,
                     label = "Audio",
-                    color = AccentEmerald,
                     onClick = {
                         onDismiss()
                         onSelectAudio()
@@ -88,39 +97,40 @@ fun MediaAttachmentSelector(
 private fun AttachmentOption(
     icon: ImageVector,
     label: String,
-    color: Color,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(12.dp)
     ) {
-        Surface(
-            shape = CircleShape,
-            color = color.copy(alpha = 0.15f),
-            modifier = Modifier.size(56.dp)
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(AppSurfaceElevated),
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = color,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = AppTextPrimary,
+                modifier = Modifier.size(24.dp)
+            )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp
+            style = TextStyle(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppTextSecondary
             )
         )
     }
 }
+

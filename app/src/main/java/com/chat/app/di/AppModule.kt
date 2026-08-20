@@ -25,4 +25,10 @@ abstract class AppModule {
     abstract fun bindKeyManager(
         impl: KeyManagerImpl
     ): KeyManager
+
+    @Binds
+    @Singleton
+    abstract fun bindPortProvider(
+        impl: com.chat.app.transport.lan.LanServer
+    ): com.chat.app.core.network.PortProvider
 }

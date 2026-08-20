@@ -73,8 +73,7 @@ class RelayListener @Inject constructor(
                     if (conn.responseCode == 200) {
                         retryDelayMs = 1500L // Reset backoff on success
                         val reader = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8))
-                        var line: String?
-
+                        var line: String? = null
                         while (isActive && reader.readLine().also { line = it } != null) {
                             line?.let { processLine(it) }
                         }
