@@ -296,8 +296,3 @@ This repository includes a smart automated watch runner (`watch.ps1` / `dev.ps1`
 2. **Local Subnet Reachability:** LAN transport requires both devices to be reachable on the local IP subnet without strict AP client isolation.
 3. **Physical Device Security:** While private keys are hardware-isolated in the Android Keystore, local chat transcripts are stored in Room SQLite with app sandbox isolation. Rooted devices or compromised operating systems may access local SQLite databases.
 
----
-
-## 📄 License
-
-This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
